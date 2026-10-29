@@ -14,7 +14,8 @@ __pycache__/
 # Generated outputs
 outputs/*
 !outputs/.gitkeep
-
+outputs/preprocessed/
+reports/preprocessing_report.csv
 # Temporary and editor files
 *.log
 .DS_Store
