@@ -1,0 +1,21 @@
+﻿metric,value,unit_or_interpretation
+ocr_images_processed,30,images
+ocr_successful,30,images
+ocr_failed,0,images
+ocr_success_rate_percent,100.0,percent
+ocr_latency_mean_seconds,12.381,seconds per successful image
+ocr_latency_median_seconds,12.382,seconds per successful image
+human_review_invoice_count,23,invoices
+human_review_invoice_rate_percent,76.67,percent
+total_fields_reviewed,270,fields
+fields_flagged_for_review,36,fields
+field_review_rate_percent,13.33,percent
+diagnostic_invoice_number_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_vendor_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_invoice_date_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_item_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_quantity_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_unit_price_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_subtotal_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_tax_matches,30/30,invoice-number-mapped comparisons; not independent accuracy
+diagnostic_grand_total_matches,30/30,invoice-number-mapped comparisons; not independent accuracy

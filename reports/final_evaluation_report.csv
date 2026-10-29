@@ -14,13 +14,13 @@ operational_ocr_images_processed,30,Operational metric from the existing evaluat
 operational_ocr_successful,30,Operational metric from the existing evaluation summary.
 operational_ocr_failed,0,Operational metric from the existing evaluation summary.
 operational_ocr_success_rate_percent,100.0,Operational metric from the existing evaluation summary.
-operational_ocr_latency_mean_seconds,10.485,Operational metric from the existing evaluation summary.
-operational_ocr_latency_median_seconds,10.572,Operational metric from the existing evaluation summary.
+operational_ocr_latency_mean_seconds,12.381,Operational metric from the existing evaluation summary.
+operational_ocr_latency_median_seconds,12.382,Operational metric from the existing evaluation summary.
 operational_human_review_invoice_count,23,Operational metric from the existing evaluation summary.
 operational_human_review_invoice_rate_percent,76.67,Operational metric from the existing evaluation summary.
 operational_total_fields_reviewed,270,Operational metric from the existing evaluation summary.
-operational_fields_flagged_for_review,37,Operational metric from the existing evaluation summary.
-operational_field_review_rate_percent,13.7,Operational metric from the existing evaluation summary.
+operational_fields_flagged_for_review,36,Operational metric from the existing evaluation summary.
+operational_field_review_rate_percent,13.33,Operational metric from the existing evaluation summary.
 operational_diagnostic_invoice_number_matches,30/30,Operational metric from the existing evaluation summary.
 operational_diagnostic_vendor_matches,30/30,Operational metric from the existing evaluation summary.
 operational_diagnostic_invoice_date_matches,30/30,Operational metric from the existing evaluation summary.
