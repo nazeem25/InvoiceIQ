@@ -70,3 +70,50 @@ python src/audit_dataset.py
 The starter dataset is small and synthetic. Results on these invoices
 alone do not establish production performance or generalization to
 unseen invoice formats.
+
+
+## Invoice Field Extraction and Validation
+
+### Extract fields from OCR text
+
+```powershell
+python src/field_extraction.py
+```
+
+Extracts nine fields:
+- Invoice number
+- Vendor
+- Invoice date
+- Item
+- Quantity
+- Unit price
+- Subtotal
+- Tax
+- Grand total
+
+Outputs:
+- `outputs/extracted/invoice_extraction.jsonl`
+- `outputs/extracted/invoice_extraction.csv`
+
+### Validate extracted records
+
+```powershell
+python src/validate_extraction.py
+```
+
+Checks required fields, date format, numeric values, and basic subtotal and total arithmetic.
+
+Output:
+- `outputs/extracted/validation_report.csv`
+
+### Run unit tests
+
+```powershell
+python -m unittest src/test_field_extraction.py -v
+```
+
+### Current limitations
+
+The dataset contains 30 image files but only 29 unique image contents in its original state. The duplicate-image and ground-truth assignment issue is documented in `reports/dataset_integrity_notes.md`.
+
+The current validation results measure field completeness, formatting, and arithmetic consistency. They do not establish extraction accuracy against the original images.
