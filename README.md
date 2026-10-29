@@ -1,119 +1,336 @@
+# InvoiceIQ — Intelligent Invoice Data Extraction
 
-# InvoiceIQ
+InvoiceIQ is a Python-based invoice processing application that uses Optical Character Recognition (OCR), structured field extraction, validation rules, and confidence-based human review to convert invoice images into structured data.
 
-InvoiceIQ is an invoice OCR and structured data extraction project.
-It converts invoice images into structured fields, validates extracted
-values, and flags uncertain results for human review.
+The application provides a web dashboard where users can upload invoice images, inspect extracted fields, review validation results, and export the results as CSV or JSON.
 
-## Dataset
+## Features
 
-- 30 synthetic invoice images
-- Ground-truth labels in `data/ground_truth/invoice_labels.csv`
-- All values are fictional
+- **Invoice Image Upload:** Upload PNG, JPG, and JPEG invoice images.
+- **Image Preprocessing:** Improve invoice image readability using OpenCV.
+- **OCR Processing:** Extract text using PaddleOCR with CPU-based inference.
+- **Structured Data Extraction:** Identify invoice fields using rule-based extraction.
+- **Data Validation:** Validate required fields, dates, numeric values, and invoice calculations.
+- **Confidence-Based Review:** Flag fields that have low OCR confidence or validation issues.
+- **Interactive Dashboard:** View extracted information, confidence scores, and review warnings.
+- **CSV Export:** Download extracted fields and associated review information.
+- **JSON Export:** Download the complete extraction response.
+- **Evaluation Metrics:** Measure OCR success rate, processing time, and human-review workload.
+- **Automated Testing:** Test extraction, validation, review logic, and evaluation calculations.
 
-## Project Status
+## Technology Stack
 
-Module 1: Project setup and dataset audit.
+| Component | Technology |
+|---|---|
+| Programming Language | Python |
+| Web Framework | Flask |
+| OCR Engine | PaddleOCR |
+| Image Processing | OpenCV |
+| Data Processing | Pandas |
+| Frontend | HTML, CSS, JavaScript |
+| Data Formats | CSV, JSON, JSONL |
+| Testing | pytest |
+| Version Control | Git and GitHub |
+| Inference | CPU-based |
 
-## Requirements
+## System Architecture
 
-- Python 3.10 or later
+```text
+                  InvoiceIQ
+                      |
+                      v
+              Invoice Image Upload
+                      |
+                      v
+              Image Preprocessing
+                 (OpenCV)
+                      |
+                      v
+                PaddleOCR
+              Text Recognition
+                      |
+                      v
+            Structured Extraction
+              (Rule-Based Logic)
+                      |
+                      v
+              Data Validation
+                      |
+                      v
+          Confidence-Based Review
+                      |
+                      v
+             Flask API Response
+                      |
+                      v
+              Web Dashboard
+                 /       \
+                v         v
+          CSV Export   JSON Export
+```
+
+## Invoice Fields
+
+InvoiceIQ extracts the following nine fields:
+
+1. Invoice Number
+2. Vendor
+3. Invoice Date
+4. Line Item
+5. Quantity
+6. Unit Price
+7. Subtotal
+8. Tax
+9. Grand Total
+
+The extracted values are checked using validation rules, including required-field checks, date parsing, numeric validation, and arithmetic consistency checks.
+
+## Project Structure
+
+```text
+InvoiceIQ/
+├── data/
+│   ├── invoices/
+│   └── ground_truth/
+│       └── invoice_labels.csv
+├── outputs/
+│   ├── extracted/
+│   ├── ocr/
+│   ├── preprocessed/
+│   ├── review/
+│   └── uploads/
+├── reports/
+├── src/
+│   ├── app.py
+│   ├── audit_dataset.py
+│   ├── audit_alignment.py
+│   ├── audit_invoice_mapping.py
+│   ├── create_mapping_manifest.py
+│   ├── evaluate.py
+│   ├── field_extraction.py
+│   ├── human_review.py
+│   ├── ocr_engine.py
+│   ├── preprocessing.py
+│   ├── validate_extraction.py
+│   ├── test_evaluate.py
+│   ├── test_field_extraction.py
+│   └── test_human_review.py
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── app.js
+├── templates/
+│   └── index.html
+├── requirements.txt
+└── README.md
+```
+
+Generated output files and reports may be created when the processing and evaluation scripts run.
+
+## Installation and Setup
+
+### Prerequisites
+
+- Python 3.12
 - Git
-- VS Code
-- Pandas
+- Visual Studio Code or another Python-compatible editor
+- Internet access for initial dependency installation
 
-## Setup
+### 1. Clone the repository
 
-Create and activate a virtual environment:
+```bash
+git clone https://github.com/nazeem25/InvoiceIQ.git
+cd InvoiceIQ
+```
+
+### 2. Create a virtual environment
+
+**Windows PowerShell:**
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Install dependencies:
+If PowerShell blocks virtual environment activation, use an appropriate local execution-policy setting or activate the environment from a supported terminal.
+
+### 3. Install dependencies
 
 ```powershell
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install pytest
 ```
 
-## Dataset Structure
+PaddleOCR and PaddlePaddle may take some time to install. Their compatibility depends on the Python version, operating system, and available package builds.
 
-```text
-data/
-├── invoices/
-└── ground_truth/
-    └── invoice_labels.csv
-```
-
-## Run Dataset Audit
+### 4. Run the application
 
 From the project root:
 
 ```powershell
-python src/audit_dataset.py
+python src/app.py
 ```
 
-## Planned Modules
+Open the dashboard in your browser:
 
-1. Project setup and dataset audit
-2. Image intake and preprocessing
-3. OCR text extraction
-4. Structured field extraction
-5. Validation and confidence scoring
-6. Evaluation and error analysis
-7. API and human review dashboard
-8. Testing, integration and final delivery
+http://127.0.0.1:5000/
 
-## Limitations
+Keep the terminal open while using the application. Press `Ctrl + C` to stop the development server.
 
-The starter dataset is small and synthetic. Results on these invoices
-alone do not establish production performance or generalization to
-unseen invoice formats.
+## API Endpoints
 
+### 1. Health Check
 
-## Invoice Field Extraction and Validation
+**Endpoint:** `GET /api/health`
 
-### Extract fields from OCR text
+Checks whether the Flask application is responding.
+
+Example:
+
+```bash
+curl http://127.0.0.1:5000/api/health
+```
+
+A successful response indicates that the application is available.
+
+### 2. Invoice Extraction
+
+**Endpoint:** `POST /api/extract`
+
+Accepts an invoice image and returns OCR output, extracted fields, validation results, confidence information, and human-review status.
+
+Supported image formats:
+
+- PNG
+- JPG
+- JPEG
+
+Maximum upload size: 10 MB.
+
+Example using Python:
+
+```python
+import requests
+
+url = "http://127.0.0.1:5000/api/extract"
+
+with open("invoice.png", "rb") as image:
+    response = requests.post(
+        url,
+        files={"file": ("invoice.png", image, "image/png")}
+    )
+
+print("Status:", response.status_code)
+print(response.json())
+```
+
+The request field name and file handling should match the implementation in `src/app.py`.
+
+The response includes information such as:
+
+- `extracted_fields`
+- `field_results`
+- `validation_valid`
+- `validation_issues`
+- `needs_human_review`
+- `confidence_threshold`
+- `recognized_text`
+- `mean_ocr_confidence`
+- Processing time and recognized segment count
+
+Refer to `src/app.py` for the exact response schema and error handling.
+
+## Human Review and Validation
+
+InvoiceIQ uses confidence-based rules to identify records that may need manual inspection.
+
+The current configured confidence threshold is **98%**.
+
+A field or invoice may be flagged when:
+
+- A required value is missing.
+- OCR confidence is unavailable.
+- OCR confidence falls below the configured threshold.
+- OCR processing fails.
+- Validation identifies an issue.
+
+A passing validation result does not guarantee that every extracted value is correct. Human review remains important for financial data.
+
+The 98% threshold is an initial configuration, not a threshold proven optimal through a separate calibration study.
+
+## Testing
+
+Run the automated test suite from the project root:
 
 ```powershell
-python src/field_extraction.py
+python -m pytest -v
 ```
 
-Extracts nine fields:
-- Invoice number
-- Vendor
-- Invoice date
-- Item
-- Quantity
-- Unit price
-- Subtotal
-- Tax
-- Grand total
+The current test suite contains 24 tests covering:
 
-Outputs:
-- `outputs/extracted/invoice_extraction.jsonl`
-- `outputs/extracted/invoice_extraction.csv`
+- Field extraction and missing values
+- Numeric normalization
+- Date and arithmetic validation
+- Confidence threshold handling
+- Missing confidence and required values
+- OCR and validation failure review logic
+- Evaluation metric calculations
 
-### Validate extracted records
+**Recorded test result:** 24 passed.
 
-```powershell
-python src/validate_extraction.py
-```
+Run the tests again after making code changes to confirm the current state of the application.
 
-Checks required fields, date format, numeric values, and basic subtotal and total arithmetic.
+## Evaluation
 
-Output:
-- `outputs/extracted/validation_report.csv`
+The recorded dataset processing run produced the following results:
 
-### Run unit tests
+| Metric | Recorded Result |
+|---|---:|
+| Invoice images processed | 30 |
+| Successful OCR runs | 30 |
+| OCR failures | 0 |
+| Mean processing time | Approximately 10.48 seconds per image |
+| Median processing time | Approximately 10.57 seconds per image |
+| Invoices flagged for review | 23 of 30 |
+| Fields flagged for review | 37 of 270 |
 
-```powershell
-python -m unittest src/test_field_extraction.py -v
-```
+These results describe the recorded run and may vary across machines and environments.
 
-### Current limitations
+### Evaluation Limitation
 
-The dataset contains 30 image files but only 29 unique image contents in its original state. The duplicate-image and ground-truth assignment issue is documented in `reports/dataset_integrity_notes.md`.
+The dataset contains an image-to-label alignment issue, including two files with identical image contents. Therefore, the recorded processing results must not be interpreted as proof of independently verified field-level accuracy.
 
-The current validation results measure field completeness, formatting, and arithmetic consistency. They do not establish extraction accuracy against the original images.
+The source invoice images and ground-truth CSV are preserved. Independent accuracy evaluation requires resolving or documenting the correspondence between the original images and their ground-truth labels without altering the source data.
+
+## Current Limitations
+
+- The initial dataset contains only 30 invoice images.
+- Extraction relies on rule-based logic and may need adaptation for new invoice layouts.
+- OCR confidence is not equivalent to the probability that an extracted field is correct.
+- The human-review threshold has not been empirically optimized.
+- Independent extraction accuracy has not yet been established.
+- Processing time depends on hardware and image complexity.
+- The application is intended as a prototype and should not be treated as a production financial-processing system without additional security, reliability, and deployment work.
+
+## Future Enhancements
+
+- Expand the dataset with diverse invoice layouts.
+- Establish verified image-to-label correspondence.
+- Calculate field-level precision, recall, and exact-match accuracy using independently verified labels.
+- Improve extraction for multiple line items and varied date and currency formats.
+- Add persistent storage and invoice history.
+- Improve field-level correction and reviewer feedback workflows.
+- Add authentication, access control, and audit logging.
+- Deploy the application with production-grade security and monitoring.
+
+## GitHub Repository
+
+Source code and project updates:
+
+https://github.com/nazeem25/InvoiceIQ
+
+## License
+
+No license has been specified yet. Add a license file before distributing the project under an open-source license.
