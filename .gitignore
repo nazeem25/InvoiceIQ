@@ -1,0 +1,22 @@
+
+# Python environments and cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Generated outputs
+outputs/*
+!outputs/.gitkeep
+
+# Temporary and editor files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
