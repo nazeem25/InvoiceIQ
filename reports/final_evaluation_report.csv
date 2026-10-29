@@ -1,0 +1,34 @@
+metric,value,interpretation
+dataset_images,30,Number of extracted invoice image records.
+ocr_invoice_number_mapping_rate,100.00%,Diagnostic mapping rate; not independent accuracy.
+diagnostic_invoice_number_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_vendor_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_invoice_date_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_item_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_quantity_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_unit_price_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_subtotal_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_tax_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+diagnostic_grand_total_match_rate,30/30 (100.00%),Matched after OCR invoice-number-based label selection; not an independent accuracy estimate.
+operational_ocr_images_processed,30,Operational metric from the existing evaluation summary.
+operational_ocr_successful,30,Operational metric from the existing evaluation summary.
+operational_ocr_failed,0,Operational metric from the existing evaluation summary.
+operational_ocr_success_rate_percent,100.0,Operational metric from the existing evaluation summary.
+operational_ocr_latency_mean_seconds,10.485,Operational metric from the existing evaluation summary.
+operational_ocr_latency_median_seconds,10.572,Operational metric from the existing evaluation summary.
+operational_human_review_invoice_count,23,Operational metric from the existing evaluation summary.
+operational_human_review_invoice_rate_percent,76.67,Operational metric from the existing evaluation summary.
+operational_total_fields_reviewed,270,Operational metric from the existing evaluation summary.
+operational_fields_flagged_for_review,37,Operational metric from the existing evaluation summary.
+operational_field_review_rate_percent,13.7,Operational metric from the existing evaluation summary.
+operational_diagnostic_invoice_number_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_vendor_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_invoice_date_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_item_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_quantity_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_unit_price_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_subtotal_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_tax_matches,30/30,Operational metric from the existing evaluation summary.
+operational_diagnostic_grand_total_matches,30/30,Operational metric from the existing evaluation summary.
+independent_field_accuracy,NOT ESTABLISHED,Filename-to-label alignment is inconsistent. OCR-number-based matching is diagnostic only.
+dataset_alignment,REQUIRES REVIEW,Inspect the label alignment report and duplicate-image issue. Original images and labels were not modified.
