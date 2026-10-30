@@ -21,3 +21,12 @@ reports/preprocessing_report.csv
 .DS_Store
 Thumbs.db
 .vscode/
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+outputs/
+reports/
+*.log

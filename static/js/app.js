@@ -1,24 +1,35 @@
 
 "use strict";
 
+// ==================================================
+// DOM ELEMENTS
+// ==================================================
+
 const fileInput = document.getElementById("fileInput");
 const dropzone = document.getElementById("dropzone");
+
 const imagePreview = document.getElementById("imagePreview");
 const uploadVisual = document.getElementById("uploadVisual");
+
 const dropTitle = document.getElementById("dropTitle");
 const dropSubtitle = document.getElementById("dropSubtitle");
+
 const selectedFile = document.getElementById("selectedFile");
 const fileName = document.getElementById("fileName");
 const fileSize = document.getElementById("fileSize");
+
 const removeFileButton = document.getElementById("removeFile");
 const extractButton = document.getElementById("extractButton");
+
 const progressWrap = document.getElementById("progressWrap");
 const progressMessage = document.getElementById("progressMessage");
 
 const emptyState = document.getElementById("emptyState");
 const resultContent = document.getElementById("resultContent");
+
 const resultBadge = document.getElementById("resultBadge");
 const resultSubtitle = document.getElementById("resultSubtitle");
+
 const fieldsBody = document.getElementById("fieldsBody");
 
 const reviewAlert = document.getElementById("reviewAlert");
@@ -27,14 +38,25 @@ const reviewMessage = document.getElementById("reviewMessage");
 
 const validationBox = document.getElementById("validationBox");
 const validationList = document.getElementById("validationList");
+
 const recognizedText = document.getElementById("recognizedText");
+
 const toast = document.getElementById("toast");
 
 const exportCsvButton = document.getElementById("exportCsvButton");
 const exportJsonButton = document.getElementById("exportJsonButton");
 
+
+// ==================================================
+// CONFIGURATION
+// ==================================================
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/png", "image/jpeg"];
+
+const ALLOWED_TYPES = [
+    "image/png",
+    "image/jpeg"
+];
 
 const FIELD_LABELS = {
     invoice_number: "Invoice number",
@@ -45,8 +67,13 @@ const FIELD_LABELS = {
     unit_price: "Unit price",
     subtotal: "Subtotal",
     tax: "Tax",
-    grand_total: "Grand total",
+    grand_total: "Grand total"
 };
+
+
+// ==================================================
+// APPLICATION STATE
+// ==================================================
 
 let currentFile = null;
 let previewUrl = null;
@@ -54,11 +81,14 @@ let latestResult = null;
 let toastTimer = null;
 let isProcessing = false;
 
-// --------------------------------------------------
-// Notifications and helpers
-// --------------------------------------------------
+
+// ==================================================
+// NOTIFICATIONS AND HELPERS
+// ==================================================
 
 function showToast(message) {
+    if (!toast) return;
+
     toast.textContent = message;
     toast.classList.add("show");
 
@@ -72,6 +102,7 @@ function showToast(message) {
     }, 4000);
 }
 
+
 function formatFileSize(bytes) {
     if (bytes < 1024 * 1024) {
         return `${(bytes / 1024).toFixed(1)} KB`;
@@ -80,45 +111,55 @@ function formatFileSize(bytes) {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+
 function setBadge(text, type = "neutral") {
     resultBadge.textContent = text;
     resultBadge.className = `result-badge ${type}`;
 }
+
 
 function setExportButtonsEnabled(enabled) {
     exportCsvButton.disabled = !enabled;
     exportJsonButton.disabled = !enabled;
 }
 
+
 function resetResults() {
     latestResult = null;
 
     emptyState.hidden = false;
     resultContent.hidden = true;
+
     reviewAlert.hidden = true;
     validationBox.hidden = true;
 
     setBadge("AWAITING INPUT");
+
     setExportButtonsEnabled(false);
 
     resultSubtitle.textContent =
         "Your structured invoice data will appear here.";
 }
 
-// --------------------------------------------------
-// File selection and preview
-// --------------------------------------------------
+
+// ==================================================
+// FILE SELECTION AND PREVIEW
+// ==================================================
 
 function selectFile(file) {
     if (!file) return;
 
     if (isProcessing) {
-        showToast("Please wait for the current extraction to finish.");
+        showToast(
+            "Please wait for the current extraction to finish."
+        );
         return;
     }
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-        showToast("Please choose a PNG, JPG, or JPEG image.");
+        showToast(
+            "Please choose a PNG, JPG, or JPEG image."
+        );
         return;
     }
 
@@ -128,7 +169,9 @@ function selectFile(file) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-        showToast("The image exceeds the 10 MB upload limit.");
+        showToast(
+            "The image exceeds the 10 MB upload limit."
+        );
         return;
     }
 
@@ -142,10 +185,12 @@ function selectFile(file) {
 
     imagePreview.src = previewUrl;
     imagePreview.hidden = false;
+
     uploadVisual.hidden = true;
 
     dropTitle.textContent = "Invoice selected";
-    dropSubtitle.textContent = "Ready to process this image";
+    dropSubtitle.textContent =
+        "Ready to process this image";
 
     fileName.textContent = file.name;
     fileSize.textContent = formatFileSize(file.size);
@@ -156,9 +201,12 @@ function selectFile(file) {
     resetResults();
 }
 
+
 function clearFile() {
     if (isProcessing) {
-        showToast("Wait for extraction to finish before removing the file.");
+        showToast(
+            "Wait for extraction to finish before removing the file."
+        );
         return;
     }
 
@@ -172,44 +220,104 @@ function clearFile() {
 
     imagePreview.removeAttribute("src");
     imagePreview.hidden = true;
+
     uploadVisual.hidden = false;
 
     dropTitle.textContent = "Drop your invoice here";
+
     dropSubtitle.innerHTML =
         'or <span class="text-link">browse files</span> from your computer';
 
     selectedFile.hidden = true;
     extractButton.disabled = true;
+
     progressWrap.hidden = true;
 
     resetResults();
 }
 
-// --------------------------------------------------
-// Display extraction results
-// --------------------------------------------------
+
+// ==================================================
+// RESULT HELPERS
+// ==================================================
+
+function isMissing(value) {
+    return (
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ""
+    );
+}
+
+
+function getFieldSource(details) {
+    return details.source || "rule_based";
+}
+
+
+function getConfidenceDisplay(details) {
+    const percent = details.confidence_percent;
+    const source = getFieldSource(details);
+
+    // Gemini values do not have OCR confidence.
+    if (source === "gemini") {
+        return "LLM extracted";
+    }
+
+    const confidenceNumber = Number(percent);
+
+    if (
+        percent !== null &&
+        percent !== undefined &&
+        Number.isFinite(confidenceNumber)
+    ) {
+        return `${confidenceNumber.toFixed(2)}%`;
+    }
+
+    return "Unavailable";
+}
+
+
+function getFieldStatus(missing, details) {
+    if (missing) {
+        return "Missing";
+    }
+
+    if (details.needs_review === true) {
+        return "Review";
+    }
+
+    return "Extracted";
+}
+
+
+// ==================================================
+// DISPLAY EXTRACTION RESULTS
+// ==================================================
 
 function renderResults(data) {
     const fields = data.extracted_fields || {};
+
     const fieldResults = data.field_results || {};
 
-    const validationIssues = Array.isArray(data.validation_issues)
+    const validationIssues = Array.isArray(
+        data.validation_issues
+    )
         ? data.validation_issues
         : [];
 
-    const missingFields = Object.keys(FIELD_LABELS).filter((key) => {
-        const value = fields[key];
+    // Identify missing fields.
+    const missingFields = Object.keys(FIELD_LABELS).filter(
+        (key) => isMissing(fields[key])
+    );
 
-        return value === null ||
-            value === undefined ||
-            String(value).trim() === "";
-    });
-
+    // Identify fields requiring manual review.
     const flaggedFields = Object.values(fieldResults).filter(
         (field) => field && field.needs_review === true
     );
 
-    const validationValid = data.validation_valid === true;
+    const validationValid =
+        data.validation_valid === true;
 
     const needsReview =
         data.needs_human_review === true ||
@@ -217,38 +325,55 @@ function renderResults(data) {
         flaggedFields.length > 0 ||
         !validationValid;
 
-    // Retain the successful response for export.
+    // Save response for export.
     latestResult = data;
+
     setExportButtonsEnabled(true);
 
     emptyState.hidden = true;
     resultContent.hidden = false;
 
-    resultSubtitle.textContent = `Results for ${currentFile.name}`;
+    resultSubtitle.textContent =
+        `Results for ${currentFile.name}`;
 
-    const confidence = Number(data.mean_ocr_confidence);
+    // --------------------------------------------------
+    // SUMMARY METRICS
+    // --------------------------------------------------
 
-    document.getElementById("confidenceValue").textContent =
+    const confidence = Number(
+        data.mean_ocr_confidence
+    );
+
+    document.getElementById(
+        "confidenceValue"
+    ).textContent =
         data.mean_ocr_confidence !== null &&
         data.mean_ocr_confidence !== undefined &&
         Number.isFinite(confidence)
             ? `${(confidence * 100).toFixed(2)}%`
             : "N/A";
 
-    const processingTime = Number(data.processing_time_seconds);
+    const processingTime = Number(
+        data.processing_time_seconds
+    );
 
-    document.getElementById("timeValue").textContent =
+    document.getElementById(
+        "timeValue"
+    ).textContent =
         data.processing_time_seconds !== null &&
         data.processing_time_seconds !== undefined &&
         Number.isFinite(processingTime)
             ? `${processingTime.toFixed(2)} s`
             : "N/A";
 
-    document.getElementById("segmentsValue").textContent =
+    document.getElementById(
+        "segmentsValue"
+    ).textContent =
         data.recognized_segments ?? "N/A";
 
-    const validationValue =
-        document.getElementById("validationValue");
+    const validationValue = document.getElementById(
+        "validationValue"
+    );
 
     validationValue.textContent = validationValid
         ? "Passed"
@@ -258,63 +383,96 @@ function renderResults(data) {
         ? "valid"
         : "invalid";
 
+    // --------------------------------------------------
+    // RESULT BADGE
+    // --------------------------------------------------
+
     setBadge(
-        needsReview ? "REVIEW RECOMMENDED" : "VALIDATION PASSED",
-        needsReview ? "warning" : "success"
+        needsReview
+            ? "REVIEW RECOMMENDED"
+            : "VALIDATION PASSED",
+
+        needsReview
+            ? "warning"
+            : "success"
     );
 
-    // Build the field table safely.
+    // --------------------------------------------------
+    // GEMINI STATUS
+    // --------------------------------------------------
+
+    const gemini = data.gemini || {};
+
+    if (gemini.used) {
+        if (gemini.status === "success") {
+            console.info(
+                "Gemini extraction successful:",
+                gemini.model
+            );
+        } else {
+            console.warn(
+                "Gemini extraction failed:",
+                gemini.error
+            );
+        }
+    }
+
+    // --------------------------------------------------
+    // FIELD TABLE
+    // --------------------------------------------------
+
     fieldsBody.replaceChildren();
 
-    for (const [key, label] of Object.entries(FIELD_LABELS)) {
+    for (const [key, label] of Object.entries(
+        FIELD_LABELS
+    )) {
         const value = fields[key];
 
-        const missing =
-            value === null ||
-            value === undefined ||
-            String(value).trim() === "";
+        const missing = isMissing(value);
 
         const details = fieldResults[key] || {};
-        const percent = details.confidence_percent;
-        const needsFieldReview = details.needs_review === true;
+
+        const confidenceText =
+            getConfidenceDisplay(details);
+
+        const statusText =
+            getFieldStatus(missing, details);
+
+        const source = getFieldSource(details);
 
         const row = document.createElement("tr");
+
         const labelCell = document.createElement("td");
         const valueCell = document.createElement("td");
         const confidenceCell = document.createElement("td");
         const statusCell = document.createElement("td");
 
         labelCell.textContent = label;
+
         valueCell.textContent = missing
             ? "Not detected"
             : String(value);
 
-        const confidenceNumber = Number(percent);
+        confidenceCell.textContent = confidenceText;
 
-        if (
-            percent !== null &&
-            percent !== undefined &&
-            Number.isFinite(confidenceNumber)
-        ) {
-            confidenceCell.textContent =
-                `${confidenceNumber.toFixed(2)}%`;
+        // Indicate where the value came from.
+        if (source === "gemini") {
+            confidenceCell.title =
+                "Value extracted by Gemini. OCR confidence is unavailable.";
         } else {
-            confidenceCell.textContent = "Unavailable";
+            confidenceCell.title =
+                "Confidence calculated from the corresponding OCR line.";
         }
 
         const status = document.createElement("span");
 
         status.className = `field-status ${
-            missing || needsFieldReview
+            missing || details.needs_review === true
                 ? "missing"
                 : "present"
         }`;
 
-        status.textContent = missing
-            ? "Missing"
-            : needsFieldReview
-                ? "Review"
-                : "Extracted";
+        status.textContent = statusText;
 
         statusCell.appendChild(status);
 
@@ -328,139 +486,252 @@ function renderResults(data) {
         fieldsBody.appendChild(row);
     }
 
-    // Display manual-review reasons.
+    // --------------------------------------------------
+    // HUMAN REVIEW ALERT
+    // --------------------------------------------------
+
     reviewAlert.hidden = !needsReview;
 
     if (needsReview) {
-        reviewTitle.textContent = "Manual review recommended";
+        reviewTitle.textContent =
+            "Manual review recommended";
 
         const reasons = [];
 
         if (missingFields.length > 0) {
-            reasons.push(`${missingFields.length} missing field(s)`);
+            reasons.push(
+                `${missingFields.length} missing field(s)`
+            );
         }
 
         if (flaggedFields.length > 0) {
             reasons.push(
-                `${flaggedFields.length} field(s) flagged by OCR review`
+                `${flaggedFields.length} field(s) flagged for review`
             );
         }
 
         if (!validationValid) {
-            reasons.push("validation checks failed");
+            reasons.push(
+                "validation checks failed"
+            );
         }
 
         reviewMessage.textContent =
             `${reasons.join("; ")}. Verify the values against the original invoice.`;
+
+    } else {
+        reviewAlert.hidden = true;
     }
 
-    // Display validation issues.
-    validationBox.hidden = validationIssues.length === 0;
+    // --------------------------------------------------
+    // VALIDATION ISSUES
+    // --------------------------------------------------
+
+    validationBox.hidden =
+        validationIssues.length === 0;
+
     validationList.replaceChildren();
 
     for (const issue of validationIssues) {
         const item = document.createElement("li");
-        item.textContent = String(issue).replaceAll("_", " ");
+
+        item.textContent = String(issue).replaceAll(
+            "_",
+            " "
+        );
+
         validationList.appendChild(item);
     }
 
+    // --------------------------------------------------
+    // RECOGNIZED OCR TEXT
+    // --------------------------------------------------
+
     recognizedText.textContent =
-        data.recognized_text || "No OCR text returned.";
+        data.recognized_text ||
+        "No OCR text returned.";
+
+    // --------------------------------------------------
+    // LAYOUT INFORMATION
+    // --------------------------------------------------
+
+    if (data.layout_analysis) {
+        console.info(
+            "Layout analysis:",
+            data.layout_analysis
+        );
+    }
+
+    // --------------------------------------------------
+    // SCROLL TO RESULTS
+    // --------------------------------------------------
 
     document.getElementById("results").scrollIntoView({
         behavior: "smooth",
-        block: "start",
+        block: "start"
     });
 }
 
-// --------------------------------------------------
-// Call the Flask API
-// --------------------------------------------------
+
+// ==================================================
+// CALL FLASK API
+// ==================================================
 
 async function extractInvoice() {
     if (!currentFile) {
-        showToast("Choose an invoice image first.");
+        showToast(
+            "Choose an invoice image first."
+        );
         return;
     }
 
     if (isProcessing) return;
 
     const fileBeingProcessed = currentFile;
+
     const formData = new FormData();
 
-    formData.append("file", fileBeingProcessed);
+    formData.append(
+        "file",
+        fileBeingProcessed
+    );
 
     isProcessing = true;
+
     extractButton.disabled = true;
+
     progressWrap.hidden = false;
 
     progressMessage.textContent =
-        "Running OCR, extracting fields, and checking confidence...";
+        "Running OCR, analyzing layout, extracting fields, and validating...";
 
     setBadge("PROCESSING");
+
     setExportButtonsEnabled(false);
 
     try {
-        const response = await fetch("/api/extract", {
-            method: "POST",
-            body: formData,
-        });
+        const response = await fetch(
+            "/api/extract",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
 
-        const data = await response.json();
+        let data;
+
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error(
+                "The server returned an invalid response."
+            );
+        }
 
         if (!response.ok) {
             throw new Error(
-                data.error || `Request failed (${response.status}).`
+                data.error ||
+                `Request failed (${response.status}).`
             );
         }
 
         if (data.ocr_status !== "success") {
             throw new Error(
-                data.error || "OCR could not process this image."
+                data.error ||
+                "OCR could not process this image."
             );
         }
 
-        // Ignore results if the selected file changed.
-        if (currentFile !== fileBeingProcessed) return;
+        // Ignore results if selected file changed.
+        if (currentFile !== fileBeingProcessed) {
+            return;
+        }
 
         renderResults(data);
+
+        if (
+            data.gemini &&
+            data.gemini.status === "failed"
+        ) {
+            showToast(
+                "Gemini failed. Check the server terminal. Rule-based results are displayed."
+            );
+        } else {
+            showToast(
+                "Invoice processing completed."
+            );
+        }
+
     } catch (error) {
-        setBadge("PROCESSING FAILED", "error");
-        showToast(
-            error.message || "An unexpected error occurred."
+        console.error(
+            "Invoice extraction error:",
+            error
         );
+
+        setBadge(
+            "PROCESSING FAILED",
+            "error"
+        );
+
+        showToast(
+            error.message ||
+            "An unexpected error occurred."
+        );
+
     } finally {
         isProcessing = false;
+
         progressWrap.hidden = true;
+
         extractButton.disabled = !currentFile;
     }
 }
 
-// --------------------------------------------------
-// Download helpers
-// --------------------------------------------------
 
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], {
-        type: `${mimeType};charset=utf-8`,
-    });
+// ==================================================
+// DOWNLOAD HELPERS
+// ==================================================
+
+function downloadFile(
+    content,
+    filename,
+    mimeType
+) {
+    const blob = new Blob(
+        [content],
+        {
+            type: `${mimeType};charset=utf-8`
+        }
+    );
 
     const url = URL.createObjectURL(blob);
+
     const link = document.createElement("a");
 
     link.href = url;
     link.download = filename;
 
     document.body.appendChild(link);
+
     link.click();
+
     link.remove();
 
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(
+        () => URL.revokeObjectURL(url),
+        1000
+    );
 }
 
+
 function getExportFilename(extension) {
-    const originalName = currentFile?.name || "invoice";
-    const baseName = originalName.replace(/\.[^.]+$/, "");
+    const originalName =
+        currentFile?.name || "invoice";
+
+    const baseName = originalName.replace(
+        /\.[^.]+$/,
+        ""
+    );
 
     const safeName = baseName
         .replace(/[^a-zA-Z0-9_-]/g, "_")
@@ -469,93 +740,169 @@ function getExportFilename(extension) {
     return `${safeName}_extraction.${extension}`;
 }
 
-// --------------------------------------------------
-// JSON export: complete API response
-// --------------------------------------------------
+
+// ==================================================
+// JSON EXPORT
+// ==================================================
 
 function exportJson() {
     if (!latestResult) {
-        showToast("Extract an invoice before exporting.");
+        showToast(
+            "Extract an invoice before exporting."
+        );
         return;
     }
 
     downloadFile(
-        JSON.stringify(latestResult, null, 2),
+        JSON.stringify(
+            latestResult,
+            null,
+            2
+        ),
         getExportFilename("json"),
         "application/json"
     );
 
-    showToast("JSON export downloaded.");
+    showToast(
+        "JSON export downloaded."
+    );
 }
 
-// --------------------------------------------------
-// CSV export: fields, confidence, and validation
-// --------------------------------------------------
+
+// ==================================================
+// CSV EXPORT
+// ==================================================
 
 function exportCsv() {
     if (!latestResult) {
-        showToast("Extract an invoice before exporting.");
+        showToast(
+            "Extract an invoice before exporting."
+        );
         return;
     }
 
-    const fields = latestResult.extracted_fields || {};
-    const fieldResults = latestResult.field_results || {};
+    const fields =
+        latestResult.extracted_fields || {};
+
+    const fieldResults =
+        latestResult.field_results || {};
 
     const rows = [
         [
             "Field",
             "Extracted Value",
+            "Extraction Source",
             "OCR Confidence (%)",
             "Needs Review",
-            "Review Reasons",
-        ],
+            "Review Reasons"
+        ]
     ];
 
-    for (const [key, label] of Object.entries(FIELD_LABELS)) {
+    for (const [key, label] of Object.entries(
+        FIELD_LABELS
+    )) {
         const value = fields[key];
+
         const result = fieldResults[key] || {};
+
         const confidence = result.confidence_percent;
 
         rows.push([
             label,
+
             value === null || value === undefined
                 ? ""
                 : String(value),
-            confidence === null || confidence === undefined
+
+            result.source || "rule_based",
+
+            result.source === "gemini" ||
+            confidence === null ||
+            confidence === undefined
                 ? ""
                 : String(confidence),
-            result.needs_review ? "Yes" : "No",
+
+            result.needs_review
+                ? "Yes"
+                : "No",
+
             Array.isArray(result.review_reasons)
                 ? result.review_reasons.join("; ")
-                : "",
+                : ""
         ]);
     }
 
+    // Additional processing information.
     rows.push([]);
-    rows.push(["OCR Status", latestResult.ocr_status || ""]);
+
+    rows.push([
+        "OCR Status",
+        latestResult.ocr_status || ""
+    ]);
+
     rows.push([
         "Mean OCR Confidence",
-        latestResult.mean_ocr_confidence ?? "",
+        latestResult.mean_ocr_confidence ?? ""
     ]);
+
     rows.push([
         "Processing Time (seconds)",
-        latestResult.processing_time_seconds ?? "",
+        latestResult.processing_time_seconds ?? ""
     ]);
+
     rows.push([
         "Validation Passed",
-        latestResult.validation_valid ? "Yes" : "No",
+        latestResult.validation_valid
+            ? "Yes"
+            : "No"
     ]);
+
     rows.push([
         "Validation Issues",
         Array.isArray(latestResult.validation_issues)
             ? latestResult.validation_issues.join("; ")
-            : "",
-    ]);
-    rows.push([
-        "Needs Human Review",
-        latestResult.needs_human_review ? "Yes" : "No",
+            : ""
     ]);
 
+    rows.push([
+        "Needs Human Review",
+        latestResult.needs_human_review
+            ? "Yes"
+            : "No"
+    ]);
+
+    // Gemini information.
+    const gemini = latestResult.gemini || {};
+
+    rows.push([
+        "Gemini Used",
+        gemini.used ? "Yes" : "No"
+    ]);
+
+    rows.push([
+        "Gemini Status",
+        gemini.status || ""
+    ]);
+
+    rows.push([
+        "Gemini Model",
+        gemini.model || ""
+    ]);
+
+    // Layout information.
+    const layout = latestResult.layout_analysis || {};
+
+    rows.push([
+        "Layout Detection Status",
+        layout.status || ""
+    ]);
+
+    rows.push([
+        "Layout Detection Count",
+        layout.detection_count ?? ""
+    ]);
+
+    // Convert rows into CSV.
     const csv = rows
         .map((row) =>
             row.map((cell) => {
@@ -577,52 +924,120 @@ function exportCsv() {
         "text/csv"
     );
 
-    showToast("CSV export downloaded.");
+    showToast(
+        "CSV export downloaded."
+    );
 }
 
-// --------------------------------------------------
-// Event listeners
-// --------------------------------------------------
 
-dropzone.addEventListener("click", (event) => {
-    if (event.target.closest("button")) return;
-    fileInput.click();
-});
+// ==================================================
+// EVENT LISTENERS
+// ==================================================
 
-dropzone.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
+dropzone.addEventListener(
+    "click",
+    (event) => {
+        if (event.target.closest("button")) {
+            return;
+        }
+
         fileInput.click();
     }
-});
+);
 
-fileInput.addEventListener("change", () => {
-    selectFile(fileInput.files[0]);
-});
 
-removeFileButton.addEventListener("click", clearFile);
-extractButton.addEventListener("click", extractInvoice);
+dropzone.addEventListener(
+    "keydown",
+    (event) => {
+        if (
+            event.key === "Enter" ||
+            event.key === " "
+        ) {
+            event.preventDefault();
 
-exportCsvButton.addEventListener("click", exportCsv);
-exportJsonButton.addEventListener("click", exportJson);
+            fileInput.click();
+        }
+    }
+);
 
-["dragenter", "dragover"].forEach((eventName) => {
-    dropzone.addEventListener(eventName, (event) => {
-        event.preventDefault();
-        dropzone.classList.add("drag-over");
-    });
-});
 
-["dragleave", "drop"].forEach((eventName) => {
-    dropzone.addEventListener(eventName, (event) => {
-        event.preventDefault();
-        dropzone.classList.remove("drag-over");
-    });
-});
+fileInput.addEventListener(
+    "change",
+    () => {
+        selectFile(fileInput.files[0]);
+    }
+);
 
-dropzone.addEventListener("drop", (event) => {
-    selectFile(event.dataTransfer.files[0]);
-});
 
-// Initial dashboard state.
+removeFileButton.addEventListener(
+    "click",
+    clearFile
+);
+
+
+extractButton.addEventListener(
+    "click",
+    extractInvoice
+);
+
+
+exportCsvButton.addEventListener(
+    "click",
+    exportCsv
+);
+
+
+exportJsonButton.addEventListener(
+    "click",
+    exportJson
+);
+
+
+// Drag and drop.
+["dragenter", "dragover"].forEach(
+    (eventName) => {
+        dropzone.addEventListener(
+            eventName,
+            (event) => {
+                event.preventDefault();
+
+                dropzone.classList.add(
+                    "drag-over"
+                );
+            }
+        );
+    }
+);
+
+
+["dragleave", "drop"].forEach(
+    (eventName) => {
+        dropzone.addEventListener(
+            eventName,
+            (event) => {
+                event.preventDefault();
+
+                dropzone.classList.remove(
+                    "drag-over"
+                );
+            }
+        );
+    }
+);
+
+
+dropzone.addEventListener(
+    "drop",
+    (event) => {
+        selectFile(
+            event.dataTransfer.files[0]
+        );
+    }
+);
+
+
+// ==================================================
+// INITIAL DASHBOARD STATE
+// ==================================================
+
 resetResults();
